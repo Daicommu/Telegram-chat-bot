@@ -35,7 +35,17 @@ async def reply(update, context):
     
     await update.message.reply_text(response.choices[0].message.content)
 
-app = ApplicationBuilder().token(os.environ.get("TELEGRAM_BOT_TOKEN")).build()
+from telegram.request import HTTPXRequest
+
+# ساخت درخواست با تنظیمات مخصوص برای جلوگیری از استفاده مجدد از اتصال
+request = HTTPXRequest(
+    connection_pool_size=1,
+    connect_timeout=30.0,
+    read_timeout=30.0
+)
+
+# ساخت اپلیکیشن با درخواست سفارشی برای getUpdates
+app = ApplicationBuilder().token(TOKEN).get_updates_request(request).build()
 app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), reply))
 
 if __name__ == "__main__":
