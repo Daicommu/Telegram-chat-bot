@@ -1,11 +1,16 @@
 import os
 from groq import Groq
 from telegram.ext import ApplicationBuilder, MessageHandler, filters
+from telegram.request import HTTPXRequest
+
+# گرفتن توکن‌ها از Secrets
+TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
 # کلاینت Groq
-groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+groq_client = Groq(api_key=GROQ_API_KEY)
 
-# پرامپت سیستمی - شخصیت ربات
+# پرامپت سیستمی
 SYSTEM_PROMPT = """You are "Mohon's Soul" — Mohon's AI assistant on Telegram.
 You reply to first-time senders only.
 
@@ -24,7 +29,6 @@ Sample (Persian):
 async def reply(update, context):
     user_message = update.message.text
     
-    # درخواست به Groq با پرامپت سیستمی
     response = groq_client.chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=[
@@ -35,16 +39,14 @@ async def reply(update, context):
     
     await update.message.reply_text(response.choices[0].message.content)
 
-from telegram.request import HTTPXRequest
-
-# ساخت درخواست با تنظیمات مخصوص برای جلوگیری از استفاده مجدد از اتصال
+# ساخت درخواست با تنظیمات ضد ReadError
 request = HTTPXRequest(
     connection_pool_size=1,
     connect_timeout=30.0,
     read_timeout=30.0
 )
 
-# ساخت اپلیکیشن با درخواست سفارشی برای getUpdates
+# ساخت اپلیکیشن
 app = ApplicationBuilder().token(TOKEN).get_updates_request(request).build()
 app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), reply))
 
